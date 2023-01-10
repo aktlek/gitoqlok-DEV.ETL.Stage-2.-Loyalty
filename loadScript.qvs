@@ -1,0 +1,264 @@
+///$tab Main
+SET ThousandSep=',';
+SET DecimalSep='.';
+SET MoneyThousandSep=',';
+SET MoneyDecimalSep='.';
+SET MoneyFormat='$#,##0.00;-$#,##0.00';
+SET TimeFormat='h:mm:ss TT';
+SET DateFormat='M/D/YYYY';
+SET TimestampFormat='M/D/YYYY h:mm:ss[.fff] TT';
+SET FirstWeekDay=6;
+SET BrokenWeeks=1;
+SET ReferenceDay=0;
+SET FirstMonthOfYear=1;
+SET CollationLocale='en-US';
+SET CreateSearchIndexOnReload=1;
+SET MonthNames='Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec';
+SET LongMonthNames='January;February;March;April;May;June;July;August;September;October;November;December';
+SET DayNames='Mon;Tue;Wed;Thu;Fri;Sat;Sun';
+SET LongDayNames='Monday;Tuesday;Wednesday;Thursday;Friday;Saturday;Sunday';
+SET NumericalAbbreviation='3:k;6:M;9:G;12:T;15:P;18:E;21:Z;24:Y;-3:m;-6:μ;-9:n;-12:p;-15:f;-18:a;-21:z;-24:y';
+
+///$tab Раздел
+set sReloadAll = 0;
+
+Dates:
+load * Inline [
+	Дата
+];
+
+for Each vDir in DirList('lib://Magnum Stage-2 (rs360_qlikservice)/Чековая Статистика/*')
+    let vYear = Right(vDir,4);
+     Trace($(vYear));
+	for Each vDir2 in DirList(vDir & '/*')
+    	let vMonth = Right(vDir2,len(vDir2) - Index(vDir2,'/',-1));
+        Trace($(vMonth));
+    	for Each vFile in FileList(vDir2 & '/*.qvd')
+        	let vDay = left(Right(vFile,len(vFile) - Index(vFile,'/',-1)),Index(Right(vFile,len(vFile) - Index(vFile,'/',-1)),'.') - 1);
+         Concatenate(Dates)
+         Load '$(vMonth)/$(vDay)/$(vYear)' as Дата
+         autogenerate(1);
+        Trace($(vDay));
+		Next vFile
+	Next vDir2
+Next vDir
+
+
+if $(sReloadAll) = 1 then
+
+[Лояльность]:
+  LOAD 
+  	max(Дата) as max_date,
+  	min(Дата) as min_date
+  Resident Dates;
+
+else
+
+[Лояльность]:
+LOAD 
+  	max(Дата) as max_date,
+  	max(Дата) as min_date
+  Resident Dates;
+
+end if;
+
+Drop Table Dates;
+
+Dates:
+LOAD 
+    MonthStart((min_date+IterNo()-1)) as Date
+Resident [Лояльность]
+
+While min_date+IterNo()-1<=max_date;
+	
+DROP Table [Лояльность];
+
+NoConcatenate
+
+Dates:
+Load Distinct Date Resident Dates;
+
+
+
+///$tab Раздел 2
+For each vDate in FieldValueList('Date')
+	Trace($(vDate));
+    
+    vYear = num(Year(vDate))
+    Trace($(vYear));
+    
+    vMonth = num(Month(vDate))
+    Trace($(vMonth));
+  	
+    vDay = num(Day(vDate))
+    Trace($(vDay));
+    
+    NoConcatenate
+    
+    Data:
+    LOAD
+    Месяц,
+    Год,
+    "Населенный пункт",
+    Отдел,
+    Группа,
+    Подгруппа,
+    "ИД клиента",
+    "Наименование торговой марки",
+    "Наименование бренда",
+    "Траты клиента, тенге",
+    "Траты клиента, шт",
+    "Чеки клиента",
+    1 as "Количество клиентов",
+    "Чеки клиента в подгруппе",
+    "Траты клиента на подгруппу, тенге",
+    "Траты клиента на подгруппу, шт",
+    "Траты клиентов подгруппы, тенге",
+    "Траты клиентов подгруппы, шт",
+    "Чеки подгруппы",
+    "Количество клиентов подгруппы",
+    "Количество клиентов сети",
+    "Траты клиентов сети, тенге",
+    "Траты клиентов сети, шт",
+    "Чеки сети"
+    FROM [lib://Magnum Stage-2 (rs360_qlikservice)/Чековая статистика/$(vYear)/$(vMonth)/1.qvd]
+    (qvd);
+
+    left join(Data)
+    Load
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        Fractile("Траты клиента на подгруппу, тенге",0.75) as Предел_Large,
+        Fractile("Траты клиента на подгруппу, тенге",0.25) as Предел_Medium
+    Resident Data
+    Group by	
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа;
+
+
+
+    NoConcatenate    
+
+        Data2:
+        LOAD
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        "ИД клиента",
+        "Наименование торговой марки",
+        "Наименование бренда",
+        "Траты клиента, тенге",
+        "Траты клиента, шт",
+        "Чеки клиента",
+        "Количество клиентов",
+        "Чеки клиента в подгруппе",
+        "Траты клиента на подгруппу, тенге",
+        "Траты клиента на подгруппу, шт",
+        "Траты клиентов подгруппы, тенге",
+        "Траты клиентов подгруппы, шт",
+        "Чеки подгруппы",
+        "Количество клиентов подгруппы",
+        "Количество клиентов сети",
+        "Траты клиентов сети, тенге",
+        "Траты клиентов сети, шт",
+        "Чеки сети",
+        if("Траты клиента, тенге" >= "Траты клиента на подгруппу, тенге" * 0.75, 'Loyal', 'Switcher') as 'Loyalty'
+    Resident Data;
+
+    left join(Data2)
+    Load
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        "ИД клиента",
+        if(only("Траты клиента на подгруппу, тенге") >= only(Предел_Large),'Large',if(only("Траты клиента на подгруппу, тенге") >= Only([Предел_Medium]),'Medium','Small')) as 'Size'
+    Resident Data
+    Group By
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        "ИД клиента";
+
+    Drop table Data;
+
+    Concatenate(Data2)
+    Load
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        max(-1) as "ИД клиента",
+        "Наименование торговой марки",
+        "Наименование бренда",
+        max("Траты клиентов подгруппы, тенге") - sum("Траты клиента, тенге") as "Траты клиента, тенге",
+        max("Траты клиентов подгруппы, шт") - sum("Траты клиента, шт") as "Траты клиента, шт",
+        max("Количество клиентов подгруппы") - sum("Количество клиентов") as "Количество клиентов",
+        max("Чеки подгруппы") - sum("Чеки клиента") as "Чеки клиента",
+        Size,
+        'Buyer other brands' as 'Loyalty'
+    Resident Data2
+    Group By
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        "Наименование торговой марки",
+        "Наименование бренда",
+        Size;
+
+    Concatenate(Data2)
+    Load
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        "Наименование торговой марки",
+        "Наименование бренда",
+        max(-2) as "ИД клиента",
+        max("Траты клиентов сети, тенге") - max("Траты клиентов подгруппы, тенге") as "Траты клиента, тенге",
+        max("Траты клиентов сети, шт") - max("Траты клиентов подгруппы, шт") as "Траты клиента, шт",
+        max("Количество клиентов сети") - max("Количество клиентов подгруппы") as "Количество клиентов",
+        max("Чеки сети") - max("Чеки подгруппы") as "Чеки клиента",
+        'Non-buyer' as 'Loyalty',
+        'Non-buyer' as 'Size'
+    Resident Data2
+    Group By
+        Месяц,
+        Год,
+        "Населенный пункт",
+        Отдел,
+        Группа,
+        Подгруппа,
+        "Наименование торговой марки",
+        "Наименование бренда";
+	
+	Store Data2 into [lib://Magnum Stage-2 (rs360_qlikservice)/Лояльность/$(vYear)/$(vMonth)/1.qvd] (qvd);
+    
+    Drop Table Data2;
+
+Next vDate
+
+Drop Table Dates;

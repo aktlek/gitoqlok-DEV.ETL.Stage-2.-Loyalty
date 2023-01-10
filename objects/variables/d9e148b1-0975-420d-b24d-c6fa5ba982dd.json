@@ -1,0 +1,15 @@
+{
+  "qInfo": {
+    "qId": "d9e148b1-0975-420d-b24d-c6fa5ba982dd",
+    "qType": "variable"
+  },
+  "qMetaDef": {},
+  "qName": "vDir",
+  "qNumberPresentation": {
+    "qType": "U",
+    "qnDec": 10,
+    "qUseThou": 0
+  },
+  "qDefinition": "lib://Magnum Stage-2 (rs360_qlikservice)/Чековая Статистика/2022",
+  "qIsScriptCreated": true
+}

@@ -1,0 +1,58 @@
+///$tab Раздел
+set sReloadAll = 0;
+
+Dates:
+load * Inline [
+	Дата
+];
+
+for Each vDir in DirList('lib://Magnum Stage-2 (rs360_qlikservice)/Чековая Статистика/*')
+    let vYear = Right(vDir,4);
+     Trace($(vYear));
+	for Each vDir2 in DirList(vDir & '/*')
+    	let vMonth = Right(vDir2,len(vDir2) - Index(vDir2,'/',-1));
+        Trace($(vMonth));
+    	for Each vFile in FileList(vDir2 & '/*.qvd')
+        	let vDay = left(Right(vFile,len(vFile) - Index(vFile,'/',-1)),Index(Right(vFile,len(vFile) - Index(vFile,'/',-1)),'.') - 1);
+         Concatenate(Dates)
+         Load '$(vMonth)/$(vDay)/$(vYear)' as Дата
+         autogenerate(1);
+        Trace($(vDay));
+		Next vFile
+	Next vDir2
+Next vDir
+
+
+if $(sReloadAll) = 1 then
+
+[Лояльность]:
+  LOAD 
+  	max(Дата) as max_date,
+  	min(Дата) as min_date
+  Resident Dates;
+
+else
+
+[Лояльность]:
+LOAD 
+  	max(Дата) as max_date,
+  	max(Дата) as min_date
+  Resident Dates;
+
+end if;
+
+Drop Table Dates;
+
+Dates:
+LOAD 
+    MonthStart((min_date+IterNo()-1)) as Date
+Resident [Лояльность]
+
+While min_date+IterNo()-1<=max_date;
+	
+DROP Table [Лояльность];
+
+NoConcatenate
+
+Dates:
+Load Distinct Date Resident Dates;

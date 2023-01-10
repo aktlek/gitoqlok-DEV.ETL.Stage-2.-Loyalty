@@ -1,0 +1,15 @@
+{
+  "qInfo": {
+    "qId": "fd49f1ec-89df-4d39-abbc-24e3a18ce486",
+    "qType": "variable"
+  },
+  "qMetaDef": {},
+  "qName": "sReloadAll",
+  "qNumberPresentation": {
+    "qType": "U",
+    "qnDec": 10,
+    "qUseThou": 0
+  },
+  "qDefinition": "0",
+  "qIsScriptCreated": true
+}

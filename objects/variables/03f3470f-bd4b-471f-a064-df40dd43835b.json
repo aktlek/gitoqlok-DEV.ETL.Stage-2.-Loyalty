@@ -1,0 +1,15 @@
+{
+  "qInfo": {
+    "qId": "03f3470f-bd4b-471f-a064-df40dd43835b",
+    "qType": "variable"
+  },
+  "qMetaDef": {},
+  "qName": "vDay",
+  "qNumberPresentation": {
+    "qType": "U",
+    "qnDec": 10,
+    "qUseThou": 0
+  },
+  "qDefinition": "1",
+  "qIsScriptCreated": true
+}

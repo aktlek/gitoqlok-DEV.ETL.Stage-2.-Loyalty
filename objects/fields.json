@@ -1,0 +1,14 @@
+[
+  {
+    "qName": "Date",
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$timestamp",
+      "$date"
+    ],
+    "qSrcTables": [
+      "Dates-1"
+    ]
+  }
+]
